@@ -1,0 +1,146 @@
+CREATE TABLE  cust_details  (
+   id  int(11) NOT NULL AUTO_INCREMENT,
+   name  varchar(10)  ,
+   gender  varchar(1)  ,
+   address  varchar(10)  ,
+   phone  int(10)  ,
+   Connection_Type  decimal(3,1)  ,
+   No_Of_Cylinders  int(11)  ,
+   PRIMARY KEY ( id )
+)
+
+CREATE TABLE  orders  (
+ id  INT( 11 ) NOT NULL AUTO_INCREMENT ,
+ odate  DATE   ,
+ qty  INT( 11 )   ,
+ payment_type  VARCHAR( 6 )   ,
+ status  VARCHAR( 1 )   ,
+ cust_id  INT( 11 )   ,
+PRIMARY KEY (  id  ) ,
+FOREIGN KEY ( Cust_Id ) REFERENCES Cust_details( Id )
+)
+
+
+CREATE TABLE IF NOT EXISTS  cancelled_orders  (
+ order_id  INT( 11 )   ,
+ cdate  DATE   ,
+ reason  VARCHAR( 30 )   ,
+FOREIGN KEY ( Order_Id ) REFERENCES Orders( Id )
+)
+
+CREATE TABLE  Billing_Details  (
+ bill_no  INT( 11 ) NOT NULL AUTO_INCREMENT ,
+ bdate  DATE   ,
+ delivery_status  VARCHAR( 1 )   ,
+ order_id  INT( 11 )   ,
+PRIMARY KEY (  bill_no  ) ,
+FOREIGN KEY ( order_Id ) REFERENCES Orders( Id )
+);
+
+CREATE TABLE IF NOT EXISTS  cancelled_bills  (
+ bill_no  INT( 11 )   ,
+ cdate  DATE   ,
+ reason  VARCHAR( 30 )   ,
+FOREIGN KEY ( bill_no ) REFERENCES billing_details( bill_no )
+)
+
+
+CREATE TABLE  pricing  (
+ connection_type  DECIMAL( 3, 1 )   ,
+ year  INT( 11 )   ,
+ month  VARCHAR( 10 )   ,
+ price  INT( 11 )  
+)
+
+
+
+INSERT INTO cust_details (`id`, `name`, `gender`, `address`, `phone`, `Connection_Type`, `No_Of_Cylinders`) VALUES
+(1, 'Harish', 'M', '1-2, bglr', 1987654322, '14.2', 1),
+(2, 'Amisha', 'F', '32-12, bgl', 1614322387, '14.2', 1),
+(3, 'Ujjawal', 'M', '19-0, gurg', 1871614322, '14.2', 1),
+(4, 'Anu', 'F', '2-10, hyd', 1000614322, '19.0', 5),
+(5, 'Rakshitha', 'F', '3-1-3, che', 1614322551, '19.0', 10),
+(6, 'Varuni', 'F', '10-4, gurg', 1432245789, '14.2', 1),
+(7, 'Vamshi', 'M', '31-14, hyd', 14433245789, '19.0', 6);
+
+INSERT INTO  orders  ( id ,  odate ,  qty ,  payment_type ,  status ,  cust_id ) VALUES
+(2, '2021-10-01', 1, 'Online', 'C', 6),
+(3, '2021-10-01', 1, 'POD', 'O', 3),
+(4, '2021-10-02', 4, 'POD', 'C', 5),
+(5, '2021-10-03', 1, 'POD', 'O', 6),
+(6, '2021-10-04', 1, 'Online', 'O', 3),
+(7, '2021-11-05', 1, 'Online', 'O', 6),
+(8, '2021-11-06', 4, 'Online', 'O', 4),
+(9, '2021-11-07', 9, 'POD', 'O', 5),
+(10, '2021-11-09', 5, 'Online', 'O', 7);
+
+INSERT INTO  cancelled_orders  ( order_id ,  cdate ,  reason ) VALUES
+(1, '2021-10-02', 'Out of Station'),
+(3, '2021-10-03', 'Mistakenly Ordered');
+
+
+INSERT INTO  billing_details  ( bill_no ,  bdate ,  delivery_status ,  order_id ) VALUES
+(1, '2021-10-03', 'D', 1),
+(2, '2021-10-03', 'U', 2),
+(3, '2021-10-04', 'D', 4),
+(4, '2021-10-06', 'D', 5),
+(5, '2021-11-06', 'D', 6),
+(6, '2021-11-06', 'D', 7),
+(7, '2021-11-08', 'D', 8);
+
+
+INSERT INTO  cancelled_bills  ( bill_no ,  cdate ,  reason ) VALUES
+(2, '2021-10-04', 'Insufficient Amount');
+
+INSERT INTO  pricing  ( connection_type ,  year ,  month ,  price ) VALUES
+('5.0', 2023, 'Jan', 500),
+('14.2', 2023, 'Jan', 1500),
+('19.0', 2023, 'Jan', 1000),
+('5.0', 2023, 'Feb', 500),
+('14.2', 2023, 'Feb', 1500),
+('19.0', 2023, 'Feb', 1000);
+
+
+---
+answer 3 : 
+SELECT Name, Connection_Type, SUM( No_of_cylinders )
+FROM Cust_Details C, orders Q
+WHERE C.Id = Q.cust_id
+AND STATUS = 'O'
+GROUP BY name
+LIMIT 0 , 30
+
+
+answer 5 :
+SELECT Orders.Cust_Id, SUM( qty ) ,
+CASE
+WHEN SUM( qty ) >=8
+THEN 'Highly Valued'
+WHEN SUM( qty )BETWEEN 5 AND 7
+THEN 'Moderately Valued'
+ELSE 'Low Valued'
+END AS Value
+FROM Orders, billing_details
+WHERE Orders.Id = billing_details.Order_Id
+AND STATUS = 'O'
+GROUP BY Orders.Cust_Id
+
+answer 6
+SELECT C.Id AS Cust_Id, C.Name, Delivery_Date
+FROM cust_details AS C
+INNER JOIN (
+
+SELECT cust_id, Delivery_Date
+FROM (
+
+SELECT O.id, O.cust_id, D.bill_no, D.Delivery_Date
+FROM orders AS O
+INNER JOIN (
+
+SELECT bill_no, Order_Id, bdate AS Delivery_Date
+FROM billing_details
+WHERE Delivery_Status = 'D'
+) AS D ON O.id = D.Order_id
+) AS P
+) AS Q ON Q.cust_id = C.Id
+ORDER BY Cust_Id
